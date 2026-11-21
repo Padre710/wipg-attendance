@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3864">
+<title>Word Incarnate Prayer Group · Attendance</title>
+<style>
+  :root { --navy:#1f3864; --gold:#c9a227; --ink:#1c1c1c; --muted:#6b6b6b; --line:#e3e3e3; --bg:#f6f5f1; --ok:#1d7a46; --okbg:#e7f5ec; --warn:#9a5b00; --warnbg:#fdf3e1; --err:#b3261e; --errbg:#fdecea; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { background:var(--navy); color:#fff; padding:22px 20px 18px; text-align:center; border-bottom:4px solid var(--gold); }
+  header h1 { margin:0; font-size:21px; font-weight:600; letter-spacing:.2px; }
+  header p { margin:4px 0 0; font-size:13px; opacity:.85; }
+  main { max-width:460px; margin:0 auto; padding:20px 16px 8px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .center { text-align:center; }
+  h2 { font-size:20px; margin:0 0 6px; }
+  p.sub { color:var(--muted); margin:0 0 16px; }
+  label { display:block; font-size:14px; font-weight:600; margin:14px 0 6px; }
+  input,select { width:100%; font:inherit; padding:11px 12px; border:1px solid #cfcfcf; border-radius:10px; background:#fff; color:var(--ink); }
+  input:focus,select:focus { outline:2px solid var(--navy); outline-offset:1px; border-color:var(--navy); }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .seg { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .seg label { margin:0; font-weight:500; border:1px solid #cfcfcf; border-radius:10px; padding:11px; text-align:center; cursor:pointer; }
+  .seg input { display:none; }
+  .seg input:checked + span { color:var(--navy); font-weight:700; }
+  .seg label:has(input:checked) { border-color:var(--navy); background:#eef2fa; }
+  button { font:inherit; font-weight:600; width:100%; padding:13px; border-radius:10px; border:1px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; margin-top:10px; }
+  button.primary { background:var(--navy); color:#fff; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .err { color:var(--err); font-size:14px; margin:12px 0 0; min-height:1px; }
+  .note { font-size:12.5px; color:var(--muted); margin-top:14px; }
+  .icon { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:4px auto 14px; font-size:32px; }
+  .t-ok .icon { background:var(--okbg); color:var(--ok); }
+  .t-warn .icon { background:var(--warnbg); color:var(--warn); }
+  .t-err .icon { background:var(--errbg); color:var(--err); }
+  .t-info .icon { background:#eef2fa; color:var(--navy); }
+  .spinner { width:42px; height:42px; border:4px solid #dde3ef; border-top-color:var(--navy); border-radius:50%; animation:spin 0.9s linear infinite; margin:10px auto 16px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  footer { text-align:center; padding:18px 16px 30px; font-size:13px; }
+  footer a { color:var(--navy); text-decoration:none; }
+  .usherbar { display:flex; justify-content:space-between; align-items:center; font-size:14px; color:var(--muted); margin-bottom:12px; }
+  .usherbar b { color:var(--ink); }
+  .count { background:var(--navy); color:#fff; border-radius:999px; padding:3px 10px; font-weight:600; font-size:13px; }
+  .result { border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px; display:flex; gap:10px; align-items:center; }
+  .result .who { flex:1; min-width:0; }
+  .result .who b { display:block; }
+  .result .who small { color:var(--muted); }
+  .result button { width:auto; margin:0; padding:9px 12px; font-size:14px; white-space:nowrap; }
+  .result button.done { border-color:var(--ok); color:var(--ok); background:var(--okbg); cursor:default; }
+  .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#222; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; max-width:90%; z-index:9; }
+  .linkbtn { background:none; border:none; color:var(--navy); padding:6px; width:auto; margin:6px auto 0; display:block; font-weight:600; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hName">Word Incarnate Prayer Group</h1>
+  <p id="hSub">CCRN · St. Thomas More Cath. Chap., UNILAG</p>
+</header>
+
+<main>
+  <!-- Loading -->
+  <section class="screen card center" id="sLoading">
+    <div class="spinner"></div>
+    <p id="loadingText" class="sub" style="margin:0">Checking you in…</p>
+  </section>
+
+  <!-- Generic message -->
+  <section class="screen card center" id="sMsg" hidden>
+    <div class="icon" id="msgIcon">✓</div>
+    <h2 id="msgTitle"></h2>
+    <p class="sub" id="msgBody"></p>
+    <div id="msgButtons"></div>
+  </section>
+
+  <!-- First visit on this phone -->
+  <section class="screen card center" id="sChoose" hidden>
+    <div class="icon" style="background:#eef2fa;color:var(--navy)">👋</div>
+    <h2>Welcome!</h2>
+    <p class="sub">Is this your first time checking in with this code?</p>
+    <button class="primary" data-go="register">Yes, I'm new here</button>
+    <button data-go="relink">I've registered before</button>
+  </section>
+
+  <!-- Registration form (members and ushers) -->
+  <section class="screen card" id="sRegister" hidden>
+    <h2 id="regTitle">Register</h2>
+    <p class="sub" id="regSub">You only do this once. Next time, just scan the code.</p>
+    <form id="regForm" novalidate>
+      <label for="fTitle">Title</label>
+      <select id="fTitle"><option value="">Select</option></select>
+      <div class="row2">
+        <div><label for="fFirst">First name</label><input id="fFirst" autocomplete="given-name" required></div>
+        <div><label for="fLast">Last name</label><input id="fLast" autocomplete="family-name" required></div>
+      </div>
+      <label for="fPhone" id="fPhoneLabel">Phone number</label>
+      <input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567">
+      <label>Are you a student?</label>
+      <div class="seg">
+        <label><input type="radio" name="status" value="Student"><span>Student</span></label>
+        <label><input type="radio" name="status" value="Non-student"><span>Non-student</span></label>
+      </div>
+      <div id="studentFields" hidden>
+        <label for="fLevel">Level</label>
+        <select id="fLevel"><option value="">Select</option></select>
+        <label for="fFaculty">Faculty</label>
+        <select id="fFaculty"><option value="">Select</option></select>
+        <input id="fFacultyOther" placeholder="Type your faculty" hidden style="margin-top:8px">
+        <label for="fDept">Department</label>
+        <input id="fDept" list="deptList" placeholder="Start typing your department">
+        <datalist id="deptList"></datalist>
+      </div>
+      <div id="workFields" hidden>
+        <label for="fProf">Profession</label>
+        <input id="fProf" placeholder="Accountant">
+      </div>
+      <p class="err" id="regErr"></p>
+      <button class="primary" type="submit" id="regBtn">Register and check in</button>
+      <button type="button" class="linkbtn" id="regBack">Back</button>
+      <p class="note">Your details are used only for fellowship attendance and follow-up, and are seen only by the fellowship coordinators.</p>
+    </form>
+  </section>
+
+  <!-- Relink a new phone -->
+  <section class="screen card" id="sRelink" hidden>
+    <h2>Welcome back</h2>
+    <p class="sub">Enter the phone number and first name you registered with.</p>
+    <form id="relinkForm" novalidate>
+      <label for="rPhone">Phone number</label>
+      <input id="rPhone" type="tel" inputmode="tel" placeholder="0803 123 4567">
+      <label for="rFirst">First name</label>
+      <input id="rFirst" autocomplete="given-name">
+      <p class="err" id="relinkErr"></p>
+      <button class="primary" type="submit" id="relinkBtn">Continue</button>
+      <button type="button" class="linkbtn" data-go="choose">Back</button>
+    </form>
+  </section>
+
+  <!-- Usher PIN -->
+  <section class="screen card center" id="sPin" hidden>
+    <div class="icon" style="background:#eef2fa;color:var(--navy)">🔒</div>
+    <h2>Usher login</h2>
+    <p class="sub">Enter your usher PIN.</p>
+    <form id="pinForm" novalidate>
+      <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" style="text-align:center;font-size:24px;letter-spacing:8px">
+      <p class="err" id="pinErr"></p>
+      <button class="primary" type="submit" id="pinBtn">Log in</button>
+      <button type="button" class="linkbtn" id="pinBack">Back</button>
+    </form>
+  </section>
+
+  <!-- Usher mode -->
+  <section class="screen card" id="sUsher" hidden>
+    <div class="usherbar"><span>Usher: <b id="usherName"></b></span><span class="count" id="usherCount">0 present</span></div>
+    <p class="err" id="usherClosed" hidden></p>
+    <input id="usherQ" type="search" placeholder="Search name, phone or ID" autocomplete="off">
+    <div id="usherResults"></div>
+    <p class="note center" id="usherHint">Type at least 2 letters.</p>
+    <button id="usherNew">Register someone new</button>
+    <button type="button" class="linkbtn" id="usherLogout">Log out of usher mode</button>
+  </section>
+</main>
+
+<footer><a href="#" id="footLink">Usher login</a></footer>
+
+<script>
+/* ===== Set this to your Apps Script web app URL (ends in /exec) ===== */
+const API = 'https://script.google.com/macros/s/AKfycbwj41GF6lcE5Jl-TIw7_3xwbgzWyLzveJ-7syDdpHH3RRYm3QZTSBNl8Pd83-Gz5pK0MQ/exec';
+
+const K = { token:'wipg_token', usher:'wipg_usher', cfg:'wipg_cfg' };
+const $ = s => document.querySelector(s);
+const ls = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+let cfg = null, regMode = 'self', loc = {};
+
+/* ---------- helpers ---------- */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
+  updateFooter(id);
+  window.scrollTo(0,0);
+}
+function loading(text){ $('#loadingText').textContent = text || 'Please wait…'; show('sLoading'); }
+function toast(text){
+  const t = document.createElement('div'); t.className='toast'; t.textContent=text;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 2600);
+}
+function message(tone, icon, title, body, buttons){
+  $('#sMsg').className = 'screen card center t-' + tone;
+  $('#msgIcon').textContent = icon; $('#msgTitle').textContent = title; $('#msgBody').textContent = body || '';
+  const box = $('#msgButtons'); box.innerHTML='';
+  (buttons||[]).forEach((b,i) => {
+    const el = document.createElement('button'); el.textContent=b.label; if (b.primary || i===0 && b.primary!==false) el.className='primary';
+    el.onclick = b.onClick; box.appendChild(el);
+  });
+  show('sMsg');
+}
+async function api(action, data){
+  const res = await fetch(API, { method:'POST', body: JSON.stringify(Object.assign({ action }, data||{})) });
+  if (!res.ok) throw new Error('Network error ' + res.status);
+  return res.json();
+}
+function getLocation(timeout){
+  return new Promise(resolve => {
+    if (!('geolocation' in navigator)) return resolve({});
+    let done = false;
+    const finish = v => { if (!done){ done = true; resolve(v); } };
+    setTimeout(() => finish({}), (timeout||9000) + 500);
+    navigator.geolocation.getCurrentPosition(
+      p => finish({ lat:p.coords.latitude, lng:p.coords.longitude, accuracy:Math.round(p.coords.accuracy) }),
+      () => finish({}),
+      { enableHighAccuracy:true, timeout: timeout||9000, maximumAge:60000 }
+    );
+  });
+}
+function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function usher(){
+  try { const u = JSON.parse(ls.get(K.usher)||'null'); return u && u.day === todayKey() ? u : null; } catch(e){ return null; }
+}
+function networkFail(retry){
+  message('err','!','Couldn’t connect','Check your internet connection and try again.',[{label:'Try again', onClick: retry}]);
+}
+
+/* ---------- header and config ---------- */
+function applyConfig(c){
+  if (!c) return;
+  cfg = c;
+  $('#hName').textContent = c.name; $('#hSub').textContent = c.subtitle; document.title = c.name + ' · Attendance';
+  const fill = (sel, items) => { const el=$(sel); const keep=el.value; el.innerHTML='<option value="">Select</option>'; items.forEach(v=>{ const o=document.createElement('option'); o.value=o.textContent=v; el.appendChild(o); }); el.value=keep; };
+  fill('#fTitle', c.titles); fill('#fLevel', c.levels); fill('#fFaculty', Object.keys(c.faculties));
+}
+async function loadConfig(){
+  try { applyConfig(JSON.parse(ls.get(K.cfg)||'null')); } catch(e){}
+  try { const c = await api('config'); if (c.status==='ok'){ ls.set(K.cfg, JSON.stringify(c)); applyConfig(c); } } catch(e){}
+}
+
+/* ---------- member check-in ---------- */
+function handleCheckin(r, extra){
+  const name = r.firstName ? r.firstName : 'friend';
+  switch (r.status) {
+    case 'ok':
+      return message('ok','✓','Welcome, ' + name + '!', 'Thank you for coming to ' + r.session + ' today. 🙏' + (r.count ? ' You’re number ' + r.count + ' today.' : '') + (extra||''), []);
+    case 'already':
+      return message('ok','✓','You’re already checked in', 'We recorded you at ' + r.time + ' today, ' + name + '. God bless you.' + (extra||''), []);
+    case 'closed':
+      return message('info','🕕', r.firstName ? 'Hi ' + r.firstName + ', check-in is closed' : 'Check-in is closed', (extra ? extra + ' ' : '') + r.message, []);
+    case 'too_far':
+      return message('warn','📍','You need to be at the chaplaincy', 'Your phone says you’re about ' + r.distance + ' m away. Move closer, or step outside for a better GPS signal, and try again.', [{label:'Try again', onClick: startCheckin}]);
+    case 'bad_token':
+      ls.del(K.token); return show('sChoose');
+    case 'busy':
+      return message('warn','⏳','One moment', r.message, [{label:'Try again', onClick: startCheckin}]);
+    default:
+      return message('err','!','Something went wrong', r.message || 'Try again in a moment.', [{label:'Try again', onClick: startCheckin}]);
+  }
+}
+async function startCheckin(){
+  const token = ls.get(K.token);
+  if (!token) return show('sChoose');
+  loading('Checking you in…');
+  loc = await getLocation();
+  try { handleCheckin(await api('checkin', Object.assign({ token }, loc))); }
+  catch(e){ networkFail(startCheckin); }
+}
+
+/* ---------- registration ---------- */
+function openRegister(mode){
+  regMode = mode;
+  const u = mode === 'usher';
+  $('#regTitle').textContent = u ? 'Register someone' : 'Register';
+  $('#regSub').textContent = u ? 'For members who won’t scan the code themselves. Phone is optional.' : 'You only do this once. Next time, just scan the code.';
+  $('#fPhoneLabel').textContent = u ? 'Phone number (optional)' : 'Phone number';
+  $('#regBtn').textContent = u ? 'Register and mark present' : 'Register and check in';
+  $('#regForm').reset(); $('#regErr').textContent=''; $('#studentFields').hidden = true; $('#workFields').hidden = true; $('#fFacultyOther').hidden = true;
+  show('sRegister');
+  if (!u) getLocation().then(l => loc = l);
+}
+document.querySelectorAll('input[name=status]').forEach(r => r.onchange = () => {
+  const s = document.querySelector('input[name=status]:checked').value;
+  $('#studentFields').hidden = s !== 'Student'; $('#workFields').hidden = s !== 'Non-student';
+});
+$('#fFaculty').onchange = () => {
+  const f = $('#fFaculty').value;
+  $('#fFacultyOther').hidden = f !== 'Other';
+  const list = $('#deptList'); list.innerHTML='';
+  ((cfg && cfg.faculties[f]) || []).forEach(d => { const o=document.createElement('option'); o.value=d; list.appendChild(o); });
+};
+function readForm(){
+  const st = document.querySelector('input[name=status]:checked');
+  const fac = $('#fFaculty').value === 'Other' ? $('#fFacultyOther').value : $('#fFaculty').value;
+  return { title:$('#fTitle').value, firstName:$('#fFirst').value, lastName:$('#fLast').value, phone:$('#fPhone').value,
+           status: st ? st.value : '', level:$('#fLevel').value, faculty:fac, department:$('#fDept').value, profession:$('#fProf').value };
+}
+function checkForm(f){
+  if (!f.firstName.trim() || !f.lastName.trim()) return 'Enter first and last name.';
+  if (regMode==='self' && f.phone.replace(/\D/g,'').length < 10) return 'Enter a valid phone number.';
+  if (!f.status) return 'Choose Student or Non-student.';
+  if (f.status==='Student' && (!f.level || !f.faculty.trim() || !f.department.trim())) return 'Fill in level, faculty and department.';
+  if (f.status==='Non-student' && !f.profession.trim()) return 'Enter a profession.';
+  return '';
+}
+$('#regForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = readForm(), problem = checkForm(f);
+  $('#regErr').textContent = problem; if (problem) return;
+  const btn = $('#regBtn'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Saving…';
+  try {
+    if (regMode === 'usher') {
+      const u = usher(); if (!u) return show('sPin');
+      const r = await api('usherRegister', { pin:u.pin, fields:f });
+      if (r.status === 'unauthorised') { ls.del(K.usher); return show('sPin'); }
+      if (r.status === 'invalid') { $('#regErr').textContent = r.message; return; }
+      if (r.status === 'phone_exists') { $('#regErr').textContent = 'That number is already registered to ' + r.maskedName + '. Search for them instead.'; return; }
+      if (r.status === 'registered') {
+        const c = r.checkin || {};
+        toast(r.name + ' registered (' + r.memberId + ')' + (c.status==='ok' ? ' and marked present' : c.status==='closed' ? '. Check-in is closed right now.' : ''));
+        if (r.count != null) setCount(r.count);
+        return openUsher();
+      }
+      $('#regErr').textContent = r.message || 'Something went wrong.';
+    } else {
+      const r = await api('register', Object.assign({ fields:f }, loc));
+      if (r.status === 'invalid') { $('#regErr').textContent = r.message; return; }
+      if (r.status === 'phone_exists') {
+        return message('warn','☎','This number is already registered', 'It belongs to ' + r.maskedName + '. Is this you?', [
+          { label:'Yes, that’s me', primary:true, onClick: () => { $('#rPhone').value = f.phone; $('#rFirst').value = f.firstName; show('sRelink'); } },
+          { label:'Use a different number', primary:false, onClick: () => show('sRegister') }
+        ]);
+      }
+      if (r.status === 'registered') {
+        ls.set(K.token, r.token);
+        return handleCheckin(r.checkin, ' Your member ID is ' + r.memberId + '.');
+      }
+      $('#regErr').textContent = r.message || 'Something went wrong.';
+    }
+  } catch(err) { $('#regErr').textContent = 'Couldn’t connect. Check your internet and try again.'; }
+  finally { btn.disabled = false; btn.textContent = label; }
+};
+$('#regBack').onclick = () => regMode === 'usher' ? openUsher() : show('sChoose');
+
+/* ---------- relink ---------- */
+$('#relinkForm').onsubmit = async e => {
+  e.preventDefault();
+  const phone = $('#rPhone').value, first = $('#rFirst').value;
+  if (phone.replace(/\D/g,'').length < 10 || !first.trim()) { $('#relinkErr').textContent = 'Enter your phone number and first name.'; return; }
+  const btn = $('#relinkBtn'); btn.disabled = true;
+  try {
+    if (!loc.lat) loc = await getLocation(6000);
+    const r = await api('relink', Object.assign({ phone, firstName:first }, loc));
+    if (r.status === 'linked') { ls.set(K.token, r.token); return handleCheckin(r.checkin); }
+    $('#relinkErr').textContent = r.status === 'no_match' ? 'We couldn’t find you with those details. Check them, or register as new.' : (r.message || 'Something went wrong.');
+  } catch(err) { $('#relinkErr').textContent = 'Couldn’t connect. Check your internet and try again.'; }
+  finally { btn.disabled = false; }
+};
+
+/* ---------- usher mode ---------- */
+let returnTo = 'sChoose';
+function openPin(){
+  const current = [...document.querySelectorAll('.screen')].find(s => !s.hidden);
+  if (current && current.id !== 'sPin' && current.id !== 'sLoading') returnTo = current.id;
+  $('#pinInput').value=''; $('#pinErr').textContent=''; show('sPin'); $('#pinInput').focus();
+}
+$('#pinBack').onclick = () => show(returnTo);
+$('#pinForm').onsubmit = async e => {
+  e.preventDefault();
+  const pin = $('#pinInput').value.trim();
+  if (!/^\d{4,6}$/.test(pin)) { $('#pinErr').textContent = 'PINs are 4 to 6 digits.'; return; }
+  const btn = $('#pinBtn'); btn.disabled = true;
+  try {
+    const r = await api('usherLogin', { pin });
+    if (r.status === 'ok') { ls.set(K.usher, JSON.stringify({ pin, name:r.name, day:todayKey() })); setCount(r.count); return openUsher(r.open); }
+    $('#pinErr').textContent = r.status === 'unauthorised' ? 'Wrong PIN.' : (r.message || 'Something went wrong.');
+  } catch(err) { $('#pinErr').textContent = 'Couldn’t connect. Check your internet and try again.'; }
+  finally { btn.disabled = false; }
+};
+function setCount(n){ $('#usherCount').textContent = n + ' present'; }
+function openUsher(open){
+  const u = usher(); if (!u) return openPin();
+  $('#usherName').textContent = u.name;
+  if (open === false) { $('#usherClosed').textContent = 'Check-in is closed right now. You can still search and register people.'; $('#usherClosed').hidden = false; }
+  show('sUsher'); runSearch();
+}
+let searchTimer = null, searchSeq = 0;
+$('#usherQ').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); };
+async function runSearch(){
+  const u = usher(); if (!u) return openPin();
+  const q = $('#usherQ').value.trim(), box = $('#usherResults');
+  if (q.length < 2) { box.innerHTML=''; $('#usherHint').textContent='Type at least 2 letters.'; $('#usherHint').hidden=false; return; }
+  const seq = ++searchSeq; $('#usherHint').textContent='Searching…'; $('#usherHint').hidden=false;
+  try {
+    const r = await api('usherSearch', { pin:u.pin, q });
+    if (seq !== searchSeq) return;
+    if (r.status === 'unauthorised') { ls.del(K.usher); return openPin(); }
+    if (r.status !== 'ok') { $('#usherHint').textContent = r.message || 'Something went wrong.'; return; }
+    setCount(r.count); box.innerHTML='';
+    $('#usherHint').textContent = r.results.length ? '' : 'No one found. Try another spelling, or register them.';
+    $('#usherHint').hidden = !!r.results.length;
+    r.results.forEach(m => {
+      const row = document.createElement('div'); row.className='result';
+      const who = document.createElement('div'); who.className='who';
+      const b = document.createElement('b'); b.textContent = m.name;
+      const sm = document.createElement('small'); sm.textContent = [m.id, m.phone, m.detail].filter(Boolean).join(' · ');
+      who.append(b, sm);
+      const btn = document.createElement('button');
+      if (m.present) { btn.textContent='Present ✓'; btn.className='done'; }
+      else { btn.textContent='Mark present'; btn.onclick = () => markPresent(m, btn); }
+      row.append(who, btn); box.appendChild(row);
+    });
+  } catch(err) { if (seq === searchSeq) $('#usherHint').textContent = 'Couldn’t connect. Check your internet.'; }
+}
+async function markPresent(m, btn){
+  const u = usher(); if (!u) return openPin();
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const r = await api('usherCheckin', { pin:u.pin, memberId:m.id });
+    if (r.status === 'unauthorised') { ls.del(K.usher); return openPin(); }
+    if (r.count != null) setCount(r.count);
+    if (r.status === 'ok' || r.status === 'already') { btn.textContent='Present ✓'; btn.className='done'; btn.onclick=null; toast(r.status==='ok' ? m.name + ' marked present' : m.name + ' was already checked in at ' + r.time); return; }
+    btn.disabled = false; btn.textContent = 'Mark present';
+    toast(r.status === 'closed' ? 'Check-in is closed right now.' : (r.message || 'Something went wrong.'));
+  } catch(err) { btn.disabled=false; btn.textContent='Mark present'; toast('Couldn’t connect. Try again.'); }
+}
+$('#usherNew').onclick = () => openRegister('usher');
+$('#usherLogout').onclick = () => { ls.del(K.usher); $('#usherQ').value=''; $('#usherResults').innerHTML=''; toast('Logged out of usher mode'); ls.get(K.token) ? startCheckin() : show('sChoose'); };
+
+/* ---------- footer ---------- */
+function updateFooter(id){
+  const f = $('#footLink'), u = usher();
+  if (id === 'sUsher' || id === 'sPin' || (id === 'sRegister' && regMode === 'usher')) { f.parentElement.hidden = true; return; }
+  f.parentElement.hidden = false;
+  f.textContent = u ? 'Back to usher mode (' + u.name + ')' : 'Usher login';
+}
+$('#footLink').onclick = e => { e.preventDefault(); usher() ? openUsher() : openPin(); };
+
+/* ---------- navigation buttons ---------- */
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+  const g = b.dataset.go;
+  if (g === 'register') openRegister('self');
+  else if (g === 'relink') { $('#relinkErr').textContent=''; show('sRelink'); getLocation().then(l => loc = l); }
+  else show('sChoose');
+});
+
+/* ---------- start ---------- */
+loadConfig();
+if (location.hash === '#usher') { usher() ? openUsher() : openPin(); }
+else startCheckin();
+</script>
+</body>
+</html>
