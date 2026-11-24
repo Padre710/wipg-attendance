@@ -176,7 +176,7 @@ const ls = {
   set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
   del(k){ try { localStorage.removeItem(k); } catch(e){} }
 };
-let cfg = null, regMode = 'self', loc = {};
+let cfg = null, regMode = 'self';
 
 /* ---------- helpers ---------- */
 function show(id){
@@ -203,19 +203,6 @@ async function api(action, data){
   const res = await fetch(API, { method:'POST', body: JSON.stringify(Object.assign({ action }, data||{})) });
   if (!res.ok) throw new Error('Network error ' + res.status);
   return res.json();
-}
-function getLocation(timeout){
-  return new Promise(resolve => {
-    if (!('geolocation' in navigator)) return resolve({});
-    let done = false;
-    const finish = v => { if (!done){ done = true; resolve(v); } };
-    setTimeout(() => finish({}), (timeout||9000) + 500);
-    navigator.geolocation.getCurrentPosition(
-      p => finish({ lat:p.coords.latitude, lng:p.coords.longitude, accuracy:Math.round(p.coords.accuracy) }),
-      () => finish({}),
-      { enableHighAccuracy:true, timeout: timeout||9000, maximumAge:60000 }
-    );
-  });
 }
 function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function usher(){
@@ -248,8 +235,6 @@ function handleCheckin(r, extra){
       return message('ok','✓','You’re already checked in', 'We recorded you at ' + r.time + ' today, ' + name + '. God bless you.' + (extra||''), []);
     case 'closed':
       return message('info','🕕', r.firstName ? 'Hi ' + r.firstName + ', check-in is closed' : 'Check-in is closed', (extra ? extra + ' ' : '') + r.message, []);
-    case 'too_far':
-      return message('warn','📍','You need to be at the chaplaincy', 'Your phone says you’re about ' + r.distance + ' m away. Move closer, or step outside for a better GPS signal, and try again.', [{label:'Try again', onClick: startCheckin}]);
     case 'bad_token':
       ls.del(K.token); return show('sChoose');
     case 'busy':
@@ -262,8 +247,7 @@ async function startCheckin(){
   const token = ls.get(K.token);
   if (!token) return show('sChoose');
   loading('Checking you in…');
-  loc = await getLocation();
-  try { handleCheckin(await api('checkin', Object.assign({ token }, loc))); }
+  try { handleCheckin(await api('checkin', { token })); }
   catch(e){ networkFail(startCheckin); }
 }
 
@@ -277,7 +261,6 @@ function openRegister(mode){
   $('#regBtn').textContent = u ? 'Register and mark present' : 'Register and check in';
   $('#regForm').reset(); $('#regErr').textContent=''; $('#studentFields').hidden = true; $('#workFields').hidden = true; $('#fFacultyOther').hidden = true;
   show('sRegister');
-  if (!u) getLocation().then(l => loc = l);
 }
 document.querySelectorAll('input[name=status]').forEach(r => r.onchange = () => {
   const s = document.querySelector('input[name=status]:checked').value;
@@ -323,7 +306,7 @@ $('#regForm').onsubmit = async e => {
       }
       $('#regErr').textContent = r.message || 'Something went wrong.';
     } else {
-      const r = await api('register', Object.assign({ fields:f }, loc));
+      const r = await api('register', { fields:f });
       if (r.status === 'invalid') { $('#regErr').textContent = r.message; return; }
       if (r.status === 'phone_exists') {
         return message('warn','☎','This number is already registered', 'It belongs to ' + r.maskedName + '. Is this you?', [
@@ -349,8 +332,7 @@ $('#relinkForm').onsubmit = async e => {
   if (phone.replace(/\D/g,'').length < 10 || !first.trim()) { $('#relinkErr').textContent = 'Enter your phone number and first name.'; return; }
   const btn = $('#relinkBtn'); btn.disabled = true;
   try {
-    if (!loc.lat) loc = await getLocation(6000);
-    const r = await api('relink', Object.assign({ phone, firstName:first }, loc));
+    const r = await api('relink', { phone, firstName:first });
     if (r.status === 'linked') { ls.set(K.token, r.token); return handleCheckin(r.checkin); }
     $('#relinkErr').textContent = r.status === 'no_match' ? 'We couldn’t find you with those details. Check them, or register as new.' : (r.message || 'Something went wrong.');
   } catch(err) { $('#relinkErr').textContent = 'Couldn’t connect. Check your internet and try again.'; }
@@ -440,7 +422,7 @@ $('#footLink').onclick = e => { e.preventDefault(); usher() ? openUsher() : open
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
   const g = b.dataset.go;
   if (g === 'register') openRegister('self');
-  else if (g === 'relink') { $('#relinkErr').textContent=''; show('sRelink'); getLocation().then(l => loc = l); }
+  else if (g === 'relink') { $('#relinkErr').textContent=''; show('sRelink'); }
   else show('sChoose');
 });
 
